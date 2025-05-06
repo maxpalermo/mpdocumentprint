@@ -1,0 +1,30 @@
+{
+    "name": "mpsoft/mpdocumentprint",
+    "description": "Modulo PrestaShop per la stampa documenti",
+    "type": "prestashop-module",
+    "license": "AFL-3.0",
+    "authors": [
+        {
+            "name": "Massimiliano Palermo",
+            "email": "maxx.palermo@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "setasign/fpdf": "^1.8",
+        "setasign/fpdi": "^2.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "MpSoft\\MpDocumentPrint\\": "src/"
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
