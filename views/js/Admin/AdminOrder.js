@@ -1,20 +1,42 @@
-document.addEventListener("DOMContentLoaded", async (e) => {
-    const table = document.getElementById("order_grid_table");
-    if (!table) return false;
+document.addEventListener("MPDocumentPrintCustomEvent", async (e) => {
+    const orderId = e.detail.orderId;
+    const orderActions = document.querySelector(".order-actions");
+    if (!orderActions) return false;
 
-    const rows = table.querySelectorAll("tbody tr");
-    rows.forEach((row) => {
-        const dataIdentifier = row.querySelector("td[data-identifier]");
-        if (dataIdentifier) {
-            const orderID = dataIdentifier.getAttribute("data-identifier");
-            const columnActions = row.querySelector("td.action-type.column-actions");
-            const btnGroup = columnActions.querySelector(".btn-group");
-            const btnNotConsegna = btnGroup.querySelector("a.grid-visualizza-la-nota-di-consegna-row-link");
-            if (btnNotConsegna) {
-                btnNotConsegna.removeAttribute("href");
-                btnNotConsegna.setAttribute("href", "javascript:void(0)");
-                btnNotConsegna.setAttribute("onclick", "DocumentPrintOrderNote(" + orderID + ");");
-            }
-        }
+    const btnPrintOrder = orderActions.querySelector(".btn.btn-action.js-print-order-view-page");
+    if (!btnPrintOrder) return false;
+
+    const i = btnPrintOrder.querySelector("i");
+    btnPrintOrder.innerHTML = "";
+    btnPrintOrder.appendChild(i);
+    btnPrintOrder.appendChild(document.createTextNode("Anteprima nota magazzino"));
+    btnPrintOrder.className = "btn btn-action js-view-order-note";
+    btnPrintOrder.addEventListener("click", () => {
+        DocumentPrintOrderNote(orderId);
     });
 });
+
+async function DocumentPrintOrderNote(orderId) {
+    const response = await fetch(MpDocumentPrintAdminControllerURL, {
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "XMLHttpRequest"
+        },
+        method: "POST",
+        body: JSON.stringify({
+            ajax: 1,
+            action: "DocumentPrintOrderNote",
+            order_id: orderId
+        })
+    });
+    const json = await response.json();
+    const data = json.data || false;
+    if (data) {
+        if (data.stream.length > 0) {
+            const filename = data.filename || "order_" + orderId + ".pdf";
+            previewBase64PdfFullHeight(data.stream, filename);
+        }
+    } else {
+        SwalError("Errore durante la chiamata Ajax!");
+    }
+}

@@ -385,7 +385,6 @@ class MpDocumentPrint extends Module
                 $cssPath.'style.css',
             ]);
             $this->context->controller->addJS([
-                $jsPath.'admin/actionOrderColumn.js',
                 $jsPath.'swal2/sweetalert2.min.js',
                 $jsPath.'swal2/request/SwalConfirm.js',
                 $jsPath.'swal2/request/SwalError.js',
@@ -435,6 +434,9 @@ class MpDocumentPrint extends Module
             $script = <<<JS
                 <script type="text/javascript">
                     const MpDocumentPrintAdminControllerURL = "{$adminControllerURL}";
+                    //creo un nuovo evento custom
+                    const MPDocumentPrintCustomEvent = new CustomEvent("MPDocumentPrintCustomEvent");
+                    document.dispatchEvent(MPDocumentPrintCustomEvent);
                 </script>
             JS;
 
@@ -447,10 +449,17 @@ class MpDocumentPrint extends Module
             $script = <<<JS
                 <script type="text/javascript">
                     const MpDocumentPrintAdminControllerURL = "{$adminControllerURL}";
-                    const MpDocumentPrintOrderId = "{$id_order}"
+                    
+                    //creo un nuovo evento custom
+                    const MPDocumentPrintCustomEvent = new CustomEvent("MPDocumentPrintCustomEvent", {
+                        detail: {
+                            orderId: "{$id_order}",
+                        },
+                    });
+                    document.dispatchEvent(MPDocumentPrintCustomEvent);
                     
                     document.addEventListener('DOMContentLoaded', () => {
-                        console.log("DOMCONTENT Loaded: BrtApiShipment");
+                        console.log("DOMCONTENT Loaded: AdminOrder");
                         $(".select2").select2({
                             language: "it",
                             width: '100%'

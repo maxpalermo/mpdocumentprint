@@ -21,6 +21,7 @@
 
 use MpSoft\MpDocumentPrint\Helpers\FetchHandler;
 use MpSoft\MpDocumentPrint\Pdf\PdfOrder;
+use MpSoft\MpDocumentPrint\Pdf\PdfOrders;
 
 class AdminMpDocumentPrintController extends ModuleAdminController
 {
@@ -44,6 +45,17 @@ class AdminMpDocumentPrintController extends ModuleAdminController
         return [
             'order_id' => $orderId,
             'document' => $document,
+            'stream' => base64_encode($stream),
+        ];
+    }
+
+    public function ajaxProcessDocumentPrintOrderNoteBulk($data)
+    {
+        $orderIds = $data['order_ids'];
+        $stream = PdfOrders::render($orderIds);
+
+        return [
+            'order_ids' => $orderIds,
             'stream' => base64_encode($stream),
         ];
     }
