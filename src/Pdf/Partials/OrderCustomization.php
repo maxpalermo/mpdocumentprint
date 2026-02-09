@@ -56,7 +56,7 @@ class OrderCustomization
             $startPage = $pdf->getPage();
         }
 
-        if ($this->index == 0) {
+        if ($this->index == 0 && !$retry) {
             $this->writeHeaderCustomization($this->pdf);
         }
 
@@ -81,17 +81,17 @@ class OrderCustomization
             $pdf->setTextColor($c[0], $c[1], $c[2]);
             $pdf->Cell($w['label'], $h, 'Tipo di Personalizzazione', '', 0, 'L', 0, '', 1);
             $pdf->setFont('', 'B');
-            $pdf->MultiCell($w['value'], $h, $product['combination'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
+            $pdf->MultiCell($w['value'], $h, $product['combination'], self::$TCPDF_NO_BORDER, 'L', self::$TCPDF_NO_FILL, self::$TCPDF_LN, $pdf->GetX(), $pdf->GetY() + 1, self::$TCPDF_RESET_HEIGHT, self::$TCPDF_NO_STRETCH, self::$TCPDF_IS_NOT_HTML, self::$TCPDF_AUTOPADDING, 0, 'T', self::$TCPDF_NO_FITCELL);
             $pdf->setFont('', '');
 
             // Quantità
             $pdf->SetX($startX);
-            $pdf->SetY($pdf->GetY());
+            $pdf->SetY($pdf->GetY() - 2);
             $c = $colors['blue'];
             $pdf->setTextColor($c[0], $c[1], $c[2]);
             $pdf->Cell($w['label'], $h, 'Quantità', '', 0, 'L', 0, '', 1);
             $pdf->setFont('', 'B');
-            $pdf->MultiCell($w['value'], $h, $product['product_quantity'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
+            $pdf->MultiCell($w['value'], $h, $product['product_quantity'], self::$TCPDF_NO_BORDER, 'L', self::$TCPDF_NO_FILL, self::$TCPDF_LN, $pdf->GetX(), $pdf->GetY() + 1, self::$TCPDF_RESET_HEIGHT, self::$TCPDF_NO_STRETCH, self::$TCPDF_IS_NOT_HTML, self::$TCPDF_AUTOPADDING, 0, 'T', self::$TCPDF_NO_FITCELL);
             $pdf->setFont('', '');
 
             foreach ($customizations['data'] as $customization) {
@@ -100,10 +100,10 @@ class OrderCustomization
                 $pdf->SetTextColor($c[0], $c[1], $c[2]);
 
                 $pdf->SetX($startX + 35);
-                $pdf->SetY($pdf->GetY());
-                $pdf->Cell($w['label'], $h, $customization['label'], '', 0, 'L', 0, '', 1);
+                $pdf->SetY($pdf->GetY() - 2);
+                $pdf->Cell($w['label'], $h, $customization['label'], self::$TCPDF_NO_BORDER, self::$TCPDF_NO_LN, 'L', self::$TCPDF_NO_FILL, '', self::$TCPDF_STRETCH);
                 $pdf->setFont('', 'B');
-                $pdf->MultiCell($w['value'], $h, $customization['value'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
+                $pdf->MultiCell($w['value'], $h, $customization['value'], self::$TCPDF_NO_BORDER, 'L', self::$TCPDF_NO_FILL, self::$TCPDF_LN, $pdf->GetX(), $pdf->GetY() + 1, self::$TCPDF_RESET_HEIGHT, self::$TCPDF_NO_STRETCH, self::$TCPDF_IS_NOT_HTML, self::$TCPDF_AUTOPADDING, 0, 'T', self::$TCPDF_NO_FITCELL);
                 $pdf->setFont('', '');
             }
 
@@ -123,7 +123,7 @@ class OrderCustomization
         }
 
         // linea di divisione
-        $pdf->Line($startX, $pdf->GetY() + 2, $startX + 180, $pdf->GetY() + 2);
+        $pdf->Line($startX, $pdf->GetY() + 2, $startX + 190, $pdf->GetY() + 2);
         $pdf->setY($pdf->getY() + 2);
 
         if (!$retry) {

@@ -31,6 +31,16 @@ trait Common
     protected static $TCPDF_FILL = 1;
     protected static $TCPDF_NO_LN = 0;
     protected static $TCPDF_LN = 1;
+    protected static $TCPDF_NO_RESET_HEIGHT = 0;
+    protected static $TCPDF_RESET_HEIGHT = 1;
+    protected static $TCPDF_NO_STRETCH = 0;
+    protected static $TCPDF_STRETCH = 1;
+    protected static $TCPDF_IS_NOT_HTML = 0;
+    protected static $TCPDF_IS_HTML = 1;
+    protected static $TCPDS_NO_AUTOPADDING = 0;
+    protected static $TCPDF_AUTOPADDING = 1;
+    protected static $TCPDF_NO_FITCELL = 0;
+    protected static $TCPDF_FITCELL = 1;
 
     protected $w = [
         'thumb' => 20,

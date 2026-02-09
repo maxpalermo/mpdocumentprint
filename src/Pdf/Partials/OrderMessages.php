@@ -87,8 +87,7 @@ class OrderMessages
 
         $id_employee = $message['id_employee'];
         if (!isset($employees[$id_employee])) {
-            $employee = new \Employee($id_employee);
-            $employees[$id_employee] = $employee->firstname . ' ' . $employee->lastname;
+            $employees[$id_employee] = 'N/D';
         }
 
         $impiegato = $employees[$id_employee];

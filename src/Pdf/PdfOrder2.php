@@ -118,7 +118,7 @@ class PdfOrder
                 $this->SetY(-15);
                 $this->SetFont('helvetica', '', 9);
                 $this->SetTextColor(120, 120, 120);
-                $footerText = '- '.$this->getAliasNumPage().'/'.$this->getAliasNbPages().' -';
+                $footerText = '- ' . $this->getAliasNumPage() . '/' . $this->getAliasNbPages() . ' -';
                 $this->Cell(0, 8, $footerText, 0, 0, 'C');
             }
 
@@ -129,7 +129,7 @@ class PdfOrder
         };
         $pdf->SetCreator(PDF_CREATOR);
         $pdf->SetAuthor('Massimiliano Palermo');
-        $pdf->SetTitle('Ordine n.'.$id_order);
+        $pdf->SetTitle('Ordine n.' . $id_order);
         $pdf->SetMargins(10, 10, 10);
         $pdf->SetAutoPageBreak(true, 20);
         $pdf->AddPage();
@@ -178,9 +178,10 @@ class PdfOrder
         $db = \Db::getInstance();
         $sql = new \DbQuery();
         // Controllo se è stock service
-        $sql->select('is_stock_service')
+        $sql
+            ->select('is_stock_service')
             ->from('product_stock_service_check')
-            ->where('id_product = '.(int) $id_product);
+            ->where('id_product = ' . (int) $id_product);
         $is_stock_service = (int) $db->getValue($sql);
         if (!$is_stock_service) {
             return [
@@ -190,10 +191,11 @@ class PdfOrder
         }
 
         $sql = new \DbQuery();
-        $sql->select('quantity')
+        $sql
+            ->select('quantity')
             ->from('product_stock_service')
-            ->where('id_product = '.(int) $id_product)
-            ->where('id_product_attribute = '.(int) $id_product_attribute);
+            ->where('id_product = ' . (int) $id_product)
+            ->where('id_product_attribute = ' . (int) $id_product_attribute);
         $result = $db->getRow($sql);
         if ($result) {
             return [
@@ -212,9 +214,10 @@ class PdfOrder
     {
         $db = \Db::getInstance();
         $sql = new \DbQuery();
-        $sql->select('date_upd')
+        $sql
+            ->select('date_upd')
             ->from('product_stock_service_check')
-            ->where('id_product = '.(int) $id_product);
+            ->where('id_product = ' . (int) $id_product);
         $result = $db->getRow($sql);
         if ($result) {
             return $result['date_upd'];
@@ -230,7 +233,7 @@ class PdfOrder
             return '';
         }
 
-        return '/img/'.$logo;
+        return '/img/' . $logo;
     }
 
     protected function getProducts($order)
@@ -316,13 +319,13 @@ class PdfOrder
         /** @var array $cover */
         $cover = \Image::getCover($idProduct);
         if (!isset($cover['id_image']) || !$cover['id_image']) {
-            return $this->context->shop->getBaseURL().'img/404.gif';
+            return $this->context->shop->getBaseURL() . 'img/404.gif';
         }
 
         /** @var \Image $image */
         $image = new \Image($cover['id_image']);
         if (!\Validate::isLoadedObject($image)) {
-            return $this->context->shop->getBaseURL().'img/404.gif';
+            return $this->context->shop->getBaseURL() . 'img/404.gif';
         }
         /** @var string $imageType */
         $imageType = ".{$image->image_format}";
@@ -356,10 +359,11 @@ class PdfOrder
     {
         $db = \Db::getInstance();
         $sql = new \DbQuery();
-        $sql->select('id_order_state')
+        $sql
+            ->select('id_order_state')
             ->select('date_add')
             ->from('order_history')
-            ->where('id_order = '.(int) $order->id)
+            ->where('id_order = ' . (int) $order->id)
             ->orderBy('id_order_state DESC');
         $lastOrderHistory = $db->getRow($sql);
         if (!$lastOrderHistory) {
@@ -388,8 +392,8 @@ class PdfOrder
         $startY = $pdf->GetY();
 
         // Logo
-        if (!empty($data['shop_logo']) && @file_exists(_PS_ROOT_DIR_.$data['shop_logo'])) {
-            $pdf->Image(_PS_ROOT_DIR_.$data['shop_logo'], $pdf->GetX() + 2, $startY + 2, $logoW - 8, $logoH, '', '', '', true, 300, '', false, false, 0, true, false, false);
+        if (!empty($data['shop_logo']) && @file_exists(_PS_ROOT_DIR_ . $data['shop_logo'])) {
+            $pdf->Image(_PS_ROOT_DIR_ . $data['shop_logo'], $pdf->GetX() + 2, $startY + 2, $logoW - 8, $logoH, '', '', '', true, 300, '', false, false, 0, true, false, false);
         }
         $pdf->SetXY($pdf->GetX(), $startY);
         $pdf->Cell($logoW, $cellH, '', 0, 0, 'L', 0);
@@ -499,18 +503,18 @@ class PdfOrder
     {
         $out = '';
         $company = \Tools::strtoupper($address['company'] ?? '');
-        $name = \Tools::strtoupper($address['firstname'].' '.$address['lastname']);
+        $name = \Tools::strtoupper($address['firstname'] . ' ' . $address['lastname']);
         if ($company == $name) {
-            $out .= $company."\n";
+            $out .= $company . "\n";
         } else {
-            $out .= $company."\n";
-            $out .= $name."\n";
+            $out .= $company . "\n";
+            $out .= $name . "\n";
         }
-        $out .= ($address['address1'] ?? '')."\n";
-        $out .= ($address['address2'] ?? '')."\n";
-        $out .= ($address['postcode'] ?? '').' ';
-        $out .= ($address['city'] ?? '').' ';
-        $out .= (isset($state['iso_code']) ? '('.$state['iso_code'].')' : '')."\n";
+        $out .= ($address['address1'] ?? '') . "\n";
+        $out .= ($address['address2'] ?? '') . "\n";
+        $out .= ($address['postcode'] ?? '') . ' ';
+        $out .= ($address['city'] ?? '') . ' ';
+        $out .= (isset($state['iso_code']) ? '(' . $state['iso_code'] . ')' : '') . "\n";
         $out .= (isset($country['iso_code']) ? $country['iso_code'] : '');
 
         return trim($out);
@@ -549,12 +553,7 @@ class PdfOrder
             return;
         }
 
-        // $pdf->AddPage();
-        // $pdf->SetY(10);
         $pdf->SetX(10);
-        // $pdf->setFontSize(18);
-        // $pdf->Cell(190, 5, 'Personalizzazioni', 0, 1, 'C');
-        // $pdf->SetX(10);
         $pdf->setFontSize($fontSize);
 
         $this->drawTableProductHeader($pdf, $w, $h, $fontSize);
@@ -606,7 +605,7 @@ class PdfOrder
         // Thumbnail
         $imgDrawn = false;
         if (!empty($product['image_url'])) {
-            $imgPath = (0 === strpos($product['image_url'], '/')) ? _PS_ROOT_DIR_.$product['image_url'] : $product['image_url'];
+            $imgPath = (0 === strpos($product['image_url'], '/')) ? _PS_ROOT_DIR_ . $product['image_url'] : $product['image_url'];
             if (@file_exists($imgPath)) {
                 $pdf->Cell($w['thumb'], $blockHeight, '', 1, 0, 'C', 1);
                 $x = $pdf->GetX() - $w['thumb'];
@@ -692,7 +691,7 @@ class PdfOrder
         $c = $colors['dark-gray'];
         $pdf->SetTextColor($c[0], $c[1], $c[2]);
         $pdf->setFontSize($fontSize + 1);
-        $pdf->Cell($w['stock_Service'], $h, 'Data verifica: '.$checkDate, 'LRB', 1, 'R', 1);
+        $pdf->Cell($w['stock_Service'], $h, 'Data verifica: ' . $checkDate, 'LRB', 1, 'R', 1);
         // Reset font
         $pdf->SetFont('', '', $fontSize);
         $pdf->SetTextColor(0x28, 0x28, 0x28);
@@ -711,9 +710,10 @@ class PdfOrder
 
         $db = \Db::getInstance();
         $sql = new \DbQuery();
-        $sql->select('id_employee, gravity, content, flags, date_add')
+        $sql
+            ->select('id_employee, gravity, content, flags, date_add')
             ->from('mp_note')
-            ->where('id_order='.(int) $order_id)
+            ->where('id_order=' . (int) $order_id)
             ->orderBy('date_add DESC');
         $messages = $db->executeS($sql);
 
@@ -764,7 +764,7 @@ class PdfOrder
             $id_employee = $message['id_employee'];
             if (!isset($employees[$id_employee])) {
                 $employee = new \Employee($id_employee);
-                $employees[$id_employee] = $employee->firstname.' '.$employee->lastname;
+                $employees[$id_employee] = $employee->firstname . ' ' . $employee->lastname;
             }
             $impiegato = $employees[$id_employee];
             $data = isset($message['date_add']) ? date('d/m/Y H:i', strtotime($message['date_add'])) : '';
@@ -775,7 +775,7 @@ class PdfOrder
             $startY = $pdf->GetY();
             $cellW = [50, 35, 85, 20];
             $cellH = 8;
-            $paddingBottom = 2; // mm
+            $paddingBottom = 2;  // mm
             // Simula la MultiCell per calcolare l'altezza
             $messaggioHeight = $pdf->getStringHeight($cellW[2], $messaggio);
             $rowHeight = max($cellH, $messaggioHeight) + $paddingBottom;
@@ -794,7 +794,7 @@ class PdfOrder
                 // Centra l'immagine nella cella
                 $imgX = $x + ($cellW[3] - 5) / 2;
                 $imgY = $startY + ($rowHeight - 5) / 2;
-                $pdf->Image(_PS_MODULE_DIR_.'mpdocumentprint/views/img/chat.png', $imgX, $imgY, 5, 5);
+                $pdf->Image(_PS_MODULE_DIR_ . 'mpdocumentprint/views/img/chat.png', $imgX, $imgY, 5, 5);
             }
             $pdf->Ln();
         }
@@ -843,7 +843,7 @@ class PdfOrder
 
             foreach ($customizations['data'] as $customization) {
                 if ($customization['hasFile']) {
-                    $imgPath = _PS_UPLOAD_DIR_.$customization['value'];
+                    $imgPath = _PS_UPLOAD_DIR_ . $customization['value'];
                     if (!empty($imgPath)) {
                         if (@file_exists($imgPath)) {
                             $pdf->Image($imgPath, $startX + 160, $startY + 2, 30, 30, '', '', '', true, 300, '', false, false, 1, 'CM', false, true);
@@ -879,10 +879,10 @@ class PdfOrder
             'light-red' => [0xB0, 0x64, 0x64],
             'green' => [0x64, 0xB0, 0x64],
             'blue' => [0x1E, 0x1E, 0xC8],
-            'yellow' => [0xFF, 0xFF, 0x00],
-            'dark-yellow' => [0xC0, 0xC0, 0x00],
-            'orange' => [0xFF, 0xA5, 0x00],
-            'purple' => [0x80, 0x00, 0x80],
+            'yellow' => [0xFF, 0xFF, 0x0],
+            'dark-yellow' => [0xC0, 0xC0, 0x0],
+            'orange' => [0xFF, 0xA5, 0x0],
+            'purple' => [0x80, 0x0, 0x80],
             'pink' => [0xFF, 0xC0, 0xCB],
             'brown' => [0xA5, 0x2A, 0x2A],
             'gray' => [0x80, 0x80, 0x80],
@@ -918,7 +918,7 @@ class PdfOrder
 
             // Appends ellipses and optionally wraps in a hoverable span
             if ($html) {
-                $string = '<span title="'.$original.'">'.$string.'…</span>';
+                $string = '<span title="' . $original . '">' . $string . '…</span>';
             } else {
                 $string .= '...';
             }
