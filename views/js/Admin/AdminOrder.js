@@ -1,4 +1,5 @@
 document.addEventListener("MPDocumentPrintCustomEvent", async (e) => {
+    console.log("DOMContentLoaded: MpDocumentPrint MPDocumentPrintCustomEvent");
     const orderId = e.detail.orderId;
     const orderActions = document.querySelector(".order-actions");
     if (!orderActions) return false;
@@ -11,32 +12,36 @@ document.addEventListener("MPDocumentPrintCustomEvent", async (e) => {
     btnPrintOrder.appendChild(i);
     btnPrintOrder.appendChild(document.createTextNode("Anteprima nota magazzino"));
     btnPrintOrder.className = "btn btn-action js-view-order-note";
-    btnPrintOrder.addEventListener("click", () => {
-        DocumentPrintOrderNote(orderId);
+    btnPrintOrder.addEventListener("click", async (e) => {
+        console.log("click DocumentPrintOrderNote");
+        e.preventDefault();
+        e.stopPropagation();
+
+        await DocumentPrintOrderNote(orderId);
+        return false;
     });
 });
 
 async function DocumentPrintOrderNote(orderId) {
+    console.log("DocumentPrintOrderNote");
+    const formData = new FormData();
+    formData.append("ajax", 1);
+    formData.append("action", "DocumentPrintOrderNote");
+    formData.append("order_id", orderId);
+
     const response = await fetch(MpDocumentPrintAdminControllerURL, {
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest"
-        },
         method: "POST",
-        body: JSON.stringify({
-            ajax: 1,
-            action: "DocumentPrintOrderNote",
-            order_id: orderId
-        })
+        body: formData,
     });
+
     const json = await response.json();
-    const data = json.data || false;
+    const data = json.data || json || false;
     if (data) {
         if (data.stream.length > 0) {
             const filename = data.filename || "order_" + orderId + ".pdf";
-            previewBase64PdfFullHeight(data.stream, filename);
+            previewBase64PdfFullHeight(orderId, data.stream, filename);
         }
     } else {
-        SwalError("Errore durante la chiamata Ajax!");
+        alert("Errore durante la chiamata Ajax!");
     }
 }

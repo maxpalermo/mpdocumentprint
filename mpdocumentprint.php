@@ -22,7 +22,8 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-require_once dirname(__FILE__).'/vendor/autoload.php';
+require_once dirname(__FILE__) . '/vendor/autoload.php';
+
 use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
 
 class MpDocumentPrint extends Module
@@ -45,12 +46,12 @@ class MpDocumentPrint extends Module
 
     public function install()
     {
-        return parent::install()
-            && $this->registerHook([
+        return parent::install() &&
+            $this->registerHook([
                 'actionAdminControllerSetMedia',
                 'displayAdminEndContent',
-            ])
-            && $this->installMenu();
+            ]) &&
+            $this->installMenu();
     }
 
     public function installMenu()
@@ -86,8 +87,8 @@ class MpDocumentPrint extends Module
 
     public function uninstall()
     {
-        return parent::uninstall()
-            && $this->uninstallMenu();
+        return parent::uninstall() &&
+            $this->uninstallMenu();
     }
 
     public function getContent()
@@ -214,7 +215,7 @@ class MpDocumentPrint extends Module
                         'class' => 'select2',
                         'options' => [
                             'query' => [
-                                ['value' => '',   'label' => 'ACCETTARE CONTANTE'],
+                                ['value' => '', 'label' => 'ACCETTARE CONTANTE'],
                                 ['value' => 'BM', 'label' => 'ACCETTARE ASSEGNO BANCARIO INTESTATO ALLA MITTENTE'],
                                 ['value' => 'CM', 'label' => 'ACCETTARE ASSEGNO CIRCOLARE INTESTATO ALLA MITTENTE'],
                                 ['value' => 'BB', 'label' => 'ACCETTARE ASSEGNO BANCARIO INTESTATO CORRIERE CON MANLEVA'],
@@ -318,7 +319,7 @@ class MpDocumentPrint extends Module
         $helper->module = $this;
         $helper->name_controller = $this->name;
         $helper->token = Tools::getAdminTokenLite('AdminModules');
-        $helper->currentIndex = AdminController::$currentIndex.'&configure='.$this->name;
+        $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
         $helper->default_form_language = (int) Configuration::get('PS_LANG_DEFAULT');
         $helper->allow_employee_form_lang = Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') ? Configuration::get('PS_BO_ALLOW_EMPLOYEE_FORM_LANG') : 0;
         $helper->title = $this->displayName;
@@ -330,7 +331,7 @@ class MpDocumentPrint extends Module
             $helper->fields_value[$key] = $value;
         }
 
-        return $output.$helper->generateForm([$fields_form]);
+        return $output . $helper->generateForm([$fields_form]);
     }
 
     /**
@@ -342,7 +343,7 @@ class MpDocumentPrint extends Module
         foreach (Employee::getEmployees() as $e) {
             $emps[] = [
                 'id_employee' => $e['id_employee'],
-                'name' => $e['firstname'].' '.$e['lastname'],
+                'name' => $e['firstname'] . ' ' . $e['lastname'],
             ];
         }
 
@@ -373,39 +374,39 @@ class MpDocumentPrint extends Module
     public function hookActionAdminControllerSetMedia($params)
     {
         $controller = Tools::getValue('controller');
-        $cssPath = $this->getLocalPath().'views/css/';
-        $jsPath = $this->getLocalPath().'views/js/';
+        $cssPath = $this->getLocalPath() . 'views/css/';
+        $jsPath = $this->getLocalPath() . 'views/js/';
         $id_order = (int) Tools::getvalue('id_order');
 
         if (in_array($controller, ['AdminOrders', 'AdminModules'])) {
             $this->context->controller->addCSS([
                 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=barcode',
                 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
-                $jsPath.'Select2/select2.min.css',
-                $cssPath.'style.css',
+                $jsPath . 'Select2/select2.min.css',
+                $cssPath . 'style.css',
             ]);
             $this->context->controller->addJS([
-                $jsPath.'swal2/sweetalert2.min.js',
-                $jsPath.'swal2/request/SwalConfirm.js',
-                $jsPath.'swal2/request/SwalError.js',
-                $jsPath.'swal2/request/SwalInput.js',
-                $jsPath.'swal2/request/SwalLoading.js',
-                $jsPath.'swal2/request/SwalNote.js',
-                $jsPath.'swal2/request/SwalSuccess.js',
-                $jsPath.'swal2/request/SwalWarning.js',
-                $jsPath.'QzTray/QzTray.js',
-                $jsPath.'Printer/PrintDocument.js',
-                $jsPath.'Printer/TestQzTray.js',
-                $jsPath.'Admin/AdminOrdersList.js',
-                $jsPath.'openBase64PdfInNewTab.js',
-                $jsPath.'previewBase64Pdf.js',
-                $jsPath.'previewBase64PdfFullHeight.js',
+                $jsPath . 'swal2/sweetalert2.min.js',
+                $jsPath . 'swal2/request/SwalConfirm.js',
+                $jsPath . 'swal2/request/SwalError.js',
+                $jsPath . 'swal2/request/SwalInput.js',
+                $jsPath . 'swal2/request/SwalLoading.js',
+                $jsPath . 'swal2/request/SwalNote.js',
+                $jsPath . 'swal2/request/SwalSuccess.js',
+                $jsPath . 'swal2/request/SwalWarning.js',
+                $jsPath . 'QzTray/QzTray.js',
+                $jsPath . 'Printer/PrintDocument.js',
+                $jsPath . 'Printer/TestQzTray.js',
+                $jsPath . 'Admin/AdminOrdersList.js',
+                $jsPath . 'openBase64PdfInNewTab.js',
+                $jsPath . 'previewBase64Pdf.js',
+                $jsPath . 'previewBase64PdfFullHeight.js',
             ]);
         }
 
         if (preg_match('/AdminOrders/i', $controller) && $id_order) {
             $this->context->controller->addJs([
-                $jsPath.'Admin/AdminOrder.js',
+                $jsPath . 'Admin/AdminOrder.js',
             ]);
         }
     }
@@ -423,71 +424,32 @@ class MpDocumentPrint extends Module
         $isAdminOrdersController = preg_match('/AdminOrders/i', $controller);
         $isModuleAdminController = preg_match('/AdminModules/i', $controller);
         $id_order = (int) Tools::getValue('id_order');
+        $adminControllerURL = $this->context->link->getAdminLink($this->adminClassName);
+        $jsAdminPath = $this->getLocalPath() . 'views/js/Admin/';
 
         if (!$isAdminOrdersController && !$isModuleAdminController) {
             return '';
         }
 
         if ($isAdminOrdersController && !$id_order) {
-            $adminControllerURL = $this->context->link->getAdminLink($this->adminClassName);
+            $script = file_get_contents($jsAdminPath . 'AdminEndContentOrder.js');
+            $script = str_replace('{$adminControllerURL}', $adminControllerURL, $script);
 
-            $script = <<<JS
-                <script type="text/javascript">
-                    const MpDocumentPrintAdminControllerURL = "{$adminControllerURL}";
-                    //creo un nuovo evento custom
-                    const MPDocumentPrintCustomEvent = new CustomEvent("MPDocumentPrintCustomEvent");
-                    document.dispatchEvent(MPDocumentPrintCustomEvent);
-                </script>
-            JS;
-
-            return $script;
+            return "<script type='text/javascript'>" . $script . '</script>';
         }
 
         if ($isAdminOrdersController && $id_order > 0) {
-            $adminControllerURL = $this->context->link->getAdminLink($this->adminClassName);
+            $script = file_get_contents($jsAdminPath . 'AdminEndContentOrderId.js');
+            $script = str_replace(['{$adminControllerURL}', '{$id_order}'], [$adminControllerURL, $id_order], $script);
 
-            $script = <<<JS
-                <script type="text/javascript">
-                    const MpDocumentPrintAdminControllerURL = "{$adminControllerURL}";
-                    
-                    //creo un nuovo evento custom
-                    const MPDocumentPrintCustomEvent = new CustomEvent("MPDocumentPrintCustomEvent", {
-                        detail: {
-                            orderId: "{$id_order}",
-                        },
-                    });
-                    document.dispatchEvent(MPDocumentPrintCustomEvent);
-                    
-                    document.addEventListener('DOMContentLoaded', () => {
-                        console.log("DOMCONTENT Loaded: AdminOrder");
-                        $(".select2").select2({
-                            language: "it",
-                            width: '100%'
-                        });
-                    });
-                </script>
-            JS;
-
-            return $script;
+            return "<script type='text/javascript'>" . $script . '</script>';
         }
 
         if ($isModuleAdminController) {
-            $adminControllerURL = $this->context->link->getAdminLink($this->adminClassName);
+            $script = file_get_contents($jsAdminPath . 'AdminEndContentModule.js');
+            $script = str_replace('{$adminControllerURL}', $adminControllerURL, $script);
 
-            $script = <<<JS
-                <script type="text/javascript">
-                    const MpDocumentPrintAdminControllerURL = "{$adminControllerURL}";
-                    document.addEventListener('DOMContentLoaded', () => {
-                        console.log("DOMCONTENT Loaded: Applying Select2");
-                        $(".select2").select2({
-                            language: "it",
-                            width: '100%'
-                        });
-                    });
-                </script>
-            JS;
-
-            return $script;
+            return "<script type='text/javascript'>" . $script . '</script>';
         }
 
         return '';

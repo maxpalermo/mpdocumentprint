@@ -31,32 +31,46 @@ class AdminMpDocumentPrintController extends ModuleAdminController
     {
         $this->bootstrap = true;
         parent::__construct();
-        $this->fetchHandler = new FetchHandler($this->module, $this);
-        $this->fetchHandler->run();
+        //$this->fetchHandler = new FetchHandler($this->module, $this);
+        //$this->fetchHandler->run();
     }
 
-    public function ajaxProcessDocumentPrintOrderNote($data)
+    public function ajaxProcessDocumentPrintOrderNote()
     {
-        $orderId = $data['order_id'];
+        $orderId = \Tools::getValue('order_id', 0);
+
+        if (!$orderId) {
+            return false;
+        }
+
         $pdfOrder = new PdfOrder($orderId);
         $document = $pdfOrder->create()->getDocument();
         $stream = $pdfOrder->render()->getStream();
 
-        return [
-            'order_id' => $orderId,
-            'document' => $document,
-            'stream' => base64_encode($stream),
-        ];
+        exit(
+            json_encode([
+                'order_id' => $orderId,
+                'document' => $document,
+                'stream' => base64_encode($stream),
+            ])
+        );
     }
 
-    public function ajaxProcessDocumentPrintOrderNoteBulk($data)
+    public function ajaxProcessDocumentPrintOrderNoteBulk()
     {
-        $orderIds = $data['order_ids'];
+        $orderIds = json_decode(\Tools::getValue('order_ids', []), true);
+
+        if (!$orderIds) {
+            return false;
+        }
+
         $stream = PdfOrders::render($orderIds);
 
-        return [
-            'order_ids' => $orderIds,
-            'stream' => base64_encode($stream),
-        ];
+        exit(
+            json_encode([
+                'order_ids' => $orderIds,
+                'stream' => base64_encode($stream),
+            ])
+        );
     }
 }

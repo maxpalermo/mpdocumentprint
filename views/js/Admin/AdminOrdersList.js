@@ -27,14 +27,26 @@ document.addEventListener("MPDocumentPrintCustomEvent", async (e) => {
 
             a.appendChild(icon);
             btnGroup.insertAdjacentElement("afterbegin", a);
-            btnGroup.style.maxWidth = "100px";
+
+            btnGroup.style.display = "flex";
+            btnGroup.style.flexWrap = "wrap";
+            btnGroup.style.flexDirection = "row";
+            btnGroup.style.gap = "5px";
             btnGroup.style.width = "100px";
+            btnGroup.style.maxWidth = "100px";
+            btnGroup.style.padding = "5px";
 
             const btns = btnGroup.querySelectorAll(".btn");
             btns.forEach((btn) => {
+                btn.style.width = "24px";
+                btn.style.height = "24px";
+                btn.style.display = "flex";
+                btn.style.alignItems = "start";
+                btn.style.justifyContent = "flex-start";
+                btn.style.backgroundColor = "transparent";
+                btn.style.border = "none";
                 btn.style.padding = "0";
-                btn.style.maxWidth = "32px";
-                btn.style.width = "32px";
+                btn.style.margin = "0";
             });
 
             btnGroup.classList.remove("justify-content-between");
@@ -61,7 +73,7 @@ document.addEventListener("MPDocumentPrintCustomEvent", async (e) => {
     `
     );
 
-    bulkActionContainer.appendChild(bulkActionDropdown);
+    //bulkActionContainer.appendChild(bulkActionDropdown);
 });
 
 async function DocumentPrintOrderNoteBulk() {
@@ -70,24 +82,23 @@ async function DocumentPrintOrderNoteBulk() {
     table.forEach((checkbox) => {
         orderIds.push(checkbox.value);
     });
+
+    const formData = new FormData();
+    formData.append("ajax", 1);
+    formData.append("action", "DocumentPrintOrderNoteBulk");
+    formData.append("order_ids", JSON.stringify(orderIds));
+
     const response = await fetch(MpDocumentPrintAdminControllerURL, {
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest"
-        },
         method: "POST",
-        body: JSON.stringify({
-            ajax: 1,
-            action: "DocumentPrintOrderNoteBulk",
-            order_ids: orderIds
-        })
+        body: formData
     });
-    const json = await response.json();
-    const data = json.data || false;
+
+    const data = await response.json();
+
     if (data) {
         if (data.stream.length > 0) {
             const filename = data.filename || "order_" + orderIds.join("_") + ".pdf";
-            previewBase64PdfFullHeight(data.stream, filename);
+            previewBase64PdfFullHeight('bulk', data.stream, filename);
         }
     } else {
         SwalError("Errore durante la chiamata Ajax!");
@@ -95,24 +106,21 @@ async function DocumentPrintOrderNoteBulk() {
 }
 
 async function DocumentPrintOrderNote(orderId) {
+    const formData = new FormData();
+    formData.append("ajax", 1);
+    formData.append("action", "DocumentPrintOrderNote");
+    formData.append("order_id", orderId);
+
     const response = await fetch(MpDocumentPrintAdminControllerURL, {
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest"
-        },
         method: "POST",
-        body: JSON.stringify({
-            ajax: 1,
-            action: "DocumentPrintOrderNote",
-            order_id: orderId
-        })
+        body: formData
     });
-    const json = await response.json();
-    const data = json.data || false;
+
+    const data = await response.json();
     if (data) {
         if (data.stream.length > 0) {
             const filename = data.filename || "order_" + orderId + ".pdf";
-            previewBase64PdfFullHeight(data.stream, filename);
+            previewBase64PdfFullHeight(orderId, data.stream, filename);
         }
     } else {
         SwalError("Errore durante la chiamata Ajax!");
