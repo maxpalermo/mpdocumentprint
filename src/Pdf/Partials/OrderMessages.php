@@ -51,7 +51,7 @@ class OrderMessages
         $sql = new \DbQuery();
 
         $sql
-            ->select('id_employee, gravity, content, printable, chat, date_add')
+            ->select('id_employee, content, printable, chat, date_add')
             ->from('mpnote')
             ->where("type='order'")
             ->where('id_order=' . (int) $order_id)
@@ -86,13 +86,16 @@ class OrderMessages
         }
 
         $id_employee = $message['id_employee'];
-        if (!isset($employees[$id_employee])) {
+        $employee = new \Employee($id_employee);
+        if (!\Validate::isLoadedObject($employee)) {
             $employees[$id_employee] = 'N/D';
+        } else {
+            $employees[$id_employee] = \Tools::ucwords($employee->firstname . ' ' . $employee->lastname);
         }
 
         $impiegato = $employees[$id_employee];
         $data = isset($message['date_add']) ? date('d/m/Y H:i', strtotime($message['date_add'])) : '';
-        $messaggio = $message['content'];
+        $messaggio = stripslashes((string) ($message['content'] ?? ''));
 
         if ($retry) {
             $pdf->setY($pdf->GetY() + 1);

@@ -104,7 +104,7 @@ class PdfOrder
             'customized_products' => $this->getProductCustomizations($order->id_cart),
             'current_state' => $this->getCurrentState($order),
             'is_new_customer' => IsNewCustomer::check($order->id_customer),
-            'messages' => $this->getMessages($order),
+            'messages' => [],
         ];
 
         return $this;
@@ -203,7 +203,7 @@ class PdfOrder
         // Controllo se è stock service
         $sql
             ->select('is_stock_service')
-            ->from('product_stock_service_check')
+            ->from('product_stock_service')
             ->where('id_product = ' . (int) $id_product);
         $is_stock_service = (int) $db->getValue($sql);
         if (!$is_stock_service) {
@@ -216,7 +216,7 @@ class PdfOrder
         $sql = new \DbQuery();
         $sql
             ->select('quantity')
-            ->from('product_stock_service')
+            ->from('product_stock_service_row')
             ->where('id_product = ' . (int) $id_product)
             ->where('id_product_attribute = ' . (int) $id_product_attribute);
         $result = $db->getRow($sql);
@@ -239,7 +239,7 @@ class PdfOrder
         $sql = new \DbQuery();
         $sql
             ->select('date_upd')
-            ->from('product_stock_service_check')
+            ->from('product_stock_service')
             ->where('id_product = ' . (int) $id_product);
         $result = $db->getRow($sql);
         if ($result) {
@@ -339,11 +339,6 @@ class PdfOrder
         }
 
         return $customized_products;
-    }
-
-    protected function getMessages(\Order $order)
-    {
-        return [];
     }
 
     protected function getImage($idProduct)
@@ -581,26 +576,6 @@ class PdfOrder
         }
     }
 
-    protected function writeProducts2(\TCPDF &$pdf, $products)
-    {
-        $w = [
-            'thumb' => 20,
-            'reference' => 60,
-            'name' => 50,
-            'qty' => 30,
-            'price' => 30,
-            'location' => 110,
-            'stock_Service' => 60,
-        ];
-        $h = 7;
-        $fontSize = 9;
-
-        $this->drawTableProductHeader($pdf, $w, $h, $fontSize);
-        foreach ($products as $i => $product) {
-            $this->drawTableProductRow($pdf, $product, $i);
-        }
-    }
-
     protected function writeCustomizations(\TCPDF $pdf, $customizedProducts)
     {
         if (!$customizedProducts) {
@@ -610,35 +585,6 @@ class PdfOrder
         foreach ($customizedProducts as $i => $product) {
             $orderCustomization = new OrderCustomization($this->id_order, $pdf, $product, $i);
             $orderCustomization->renderRow();
-        }
-    }
-
-    protected function writeCustomizations2(\TCPDF $pdf, $customizedProducts)
-    {
-        // Definizione larghezze colonne (mm)
-        // Larghezze colonna per coprire tutta la pagina (A4, margini 10mm -> 190mm)
-        $w = $this->getWidths();
-        $colors = $this->getColors();
-        $h = $this->getHeight();
-        $fontSize = $this->getFontSize();
-
-        if (!$customizedProducts) {
-            return;
-        }
-
-        // Passo a una nuova pagina
-        $pdf->AddPage();
-        $this->writeHeaderOrderNum($pdf, $this->id_order);
-        $pdf->SetY(10);
-        $pdf->SetX(10);
-        $pdf->Cell(0, 8, 'Personalizzazioni', 0, 0, 'C');
-        $pdf->Ln();
-        $pdf->setFontSize($fontSize);
-
-        // $this->drawTableProductHeader($pdf, $w, $h, $fontSize);
-
-        foreach ($customizedProducts as $i => $product) {
-            $this->drawProductCustomization($pdf, $product);
         }
     }
 
@@ -656,44 +602,6 @@ class PdfOrder
         }
     }
 
-    protected function writeMessages2($pdf, $id_order)
-    {
-        $this->drawMessages($pdf, $id_order);
-    }
-
-    protected function drawTableProductHeader(&$pdf, $w, $h, $fontSize)
-    {
-        $pdf->SetFont('helvetica', 'B', $fontSize + 1);
-        $pdf->SetFillColor(136, 136, 136);
-        $pdf->SetTextColor(255, 255, 255);
-        $pdf->Cell($w['thumb'], $h, 'IMM', 1, 0, 'C', 1);
-        $pdf->Cell($w['reference'], $h, 'Riferimento', 1, 0, 'C', 1);
-        $pdf->Cell($w['name'], $h, 'Prodotto', 1, 0, 'C', 1);
-        $pdf->Cell($w['qty'], $h, 'Quantità', 1, 0, 'C', 1);
-        $pdf->Cell($w['price'], $h, 'Prezzo', 1, 1, 'C', 1);
-        // Ripristina font e colori per la riga successiva (riga dati)
-        $pdf->SetTextColor(40, 40, 40);
-        $pdf->SetFont('helvetica', '', $fontSize);
-        $pdf->SetFillColor(255, 255, 255);
-    }
-
-    protected function getProductLocation($idProduct)
-    {
-        $iconClose = html_entity_decode('&#xf00d;', ENT_NOQUOTES, 'UTF-8');
-
-        $db = \Db::getInstance();
-        $pfx = _DB_PREFIX_;
-        $query = "
-            SELECT 
-                location
-            FROM {$pfx}product_location
-            WHERE 
-                id_product = {$idProduct}
-        ";
-        $result = $db->getValue($query);
-        return $result ?: '--';
-    }
-
     protected function getCover($idProduct)
     {
         $imageCover = \Product::getCover($idProduct);
@@ -709,342 +617,6 @@ class PdfOrder
         }
 
         return $imagePath;
-    }
-
-    protected function drawTableProductRow(\TCPDF &$pdf, $product, $i, $drawCustomization = false)
-    {
-        $product['location'] = $product['location'] ?: $this->getProductLocation($product['id_product']);
-        $w = $this->getWidths();
-        $colors = $this->getColors();
-        $h = $this->getHeight();
-        $fontSize = $this->getFontSize();
-        $lineHeight = $this->getLineHeight();
-
-        $fill = (0 == $i % 2) ? [0xFF, 0xFF, 0xFF] : [0xF6, 0xF6, 0xF6];
-        $pdf->SetFillColor($fill[0], $fill[1], $fill[2]);
-
-        // Calcolo spazio necessario (3 righe)
-        $blockHeight = $h * 3;
-        if ($pdf->GetY() + $blockHeight > ($pdf->getPageHeight() - $pdf->getBreakMargin())) {
-            $pdf->AddPage();
-            $this->writeHeaderOrderNum($pdf, $this->id_order);
-            $this->drawTableProductHeader($pdf, $w, $h, $fontSize);
-        }
-
-        // Thumbnail
-        $imgDrawn = false;
-        $coverPath = $this->getCover($product['id_product']);
-        $pdf->Cell($w['thumb'], $blockHeight, '', 1, 0, 'C', 1);
-        $x = $pdf->GetX() - $w['thumb'];
-        $y = $pdf->GetY();
-        $pdf->Image($coverPath, $x + 2, $y + 2, $w['thumb'] - 4, $blockHeight - 4, '', '', '', false, 300, '', false, false, 0, false, false, false);
-        $imgDrawn = true;
-
-        // Riga 1: dati principali
-        $reference = $product['reference'] ?? '';
-        $name = $this->truncateString($product['product_name'] ?? '', 40);
-        $qty = $product['product_quantity'] ?? '';
-        $price = $product['price_currency'] ?? '';
-        $pdf->setFont('', 'B', 12);
-        $pdf->Cell($w['reference'], $h, $reference, 'LTR', 0, 'L', 1);
-        $pdf->setFont('', '', 10);
-        $pdf->Cell($w['name'], $h, $name, 'LTR', 0, 'L', 1);
-
-        // QUANTITÀ ORDINATA
-        $pdf->setFontSize($fontSize + 5);
-        $pdf->setFont('', 'B');
-        $pdf->setTextColor(0x30, 0x30, 0x30);
-        $pdf->setFillColor(0xFC, 0xFC, 0xFC);
-        $pdf->Cell($w['qty'], $h, $qty, 'LTR', 0, 'C', 1);
-        $pdf->setFont('', '');
-
-        // PREZZO
-        $pdf->setFontSize($fontSize + 2);
-        $pdf->setFillColor(0xFF, 0xFF, 0xFF);
-        $pdf->setTextColor(0x64, 0x64, 0x64);
-        $pdf->Cell($w['price'], $h, $price, 'LTR', 1, 'R', 1);
-
-        // Riga 2: combinazione, stock, sconto
-        $pdf->Cell($w['thumb'], $h, '', 0, 0, '', 0);
-        $pdf->SetFont('', '', $fontSize - 1);
-        $pdf->SetTextColor(0x64, 0x64, 0x64);
-        $pdf->Cell($w['reference'], $h, '', 'LR', 0, 'L', 1);
-
-        // Visualizzo la combinazione
-        $c = $colors['blue'];
-        $pdf->SetTextColor($c[0], $c[1], $c[2]);
-        $pdf->setFontSize($fontSize + 4);
-        $pdf->setFont('', 'B');
-        $pdf->Cell($w['name'], $h, isset($product['combination']) ? $product['combination'] : '', 'LR', 0, 'L', 1, '', 1);
-        $pdf->setFontSize($fontSize + 2);
-        $pdf->setFont('', '');
-        $pdf->SetTextColor(0x80, 0x30, 0xB4);
-
-        // Visualizzo la quantità in magazzino in diversi colori
-        $stock = (int) ($product['product_quantity_in_stock'] ?? 0);
-        if ($stock <= 0) {
-            $c = $colors['red'];
-        } else {
-            $c = $colors['green'];
-        }
-        $pdf->setFillColor(0xD5, 0xD5, 0xD5);
-        $pdf->SetTextColor($c[0], $c[1], $c[2]);
-        $pdf->Cell($w['qty'] / 2, $h, $stock, 'LR', 0, 'C', 1);
-        $pdf->setFillColor(0xFF, 0xFF, 0xFF);
-
-        // Visualizzo lo stock Service
-        if ($product['stock_service']['is_stock_service']) {
-            $c = $colors['blue'];
-            $pdf->SetTextColor($c[0], $c[1], $c[2]);
-            $stockService = (int) $product['stock_service']['quantity'];
-        } else {
-            $c = $colors['dark-gray'];
-            $pdf->SetTextColor($c[0], $c[1], $c[2]);
-            $stockService = '--';
-        }
-        $pdf->setFillColor(0xD5, 0xD5, 0xD5);
-        $pdf->Cell($w['qty'] / 2, $h, $stockService, 'LR', 0, 'C', 1);
-        $pdf->setFillColor(0xFF, 0xFF, 0xFF);
-
-        // Visualizzo lo sconto
-        $pdf->setFontSize($fontSize);
-        $c = $colors['light-red'];
-        $pdf->SetTextColor($c[0], $c[1], $c[2]);
-        $discount = (!empty($product['reduction_percent']) ? "({$product['reduction_percent']} %)" : '');
-        $pdf->Cell($w['price'], $h, $discount, 'LR', 1, 'R', 1);
-
-        // Riga 3: locazione e data verifica
-        $pdf->Cell($w['thumb'], $h, '', 0, 0, '', 0);
-        $pdf->SetTextColor(0x30, 0x30, 0x30);
-        $pdf->setFontSize($fontSize + 2);
-        $pdf->setTextColor(0xA0, 0x30, 0x30);
-        $pdf->setFont('', 'B');
-        $pdf->Cell($w['location'], $h, isset($product['location']) ? $product['location'] : '', 'B', 0, 'L', 1);
-        $pdf->setFont('', '');
-        $pdf->setTextColor(0x30, 0x30, 0x30);
-
-        $checkDate = !empty($product['check_date']) ? $product['check_date'] : '';
-        $pdf->SetTextColor(0x30, 0x30, 0x30);
-        $pdf->setFontSize($fontSize - 2);
-        $pdf->setFont('', '');
-        $pdf->Cell($w['stock_Service'], $h, $checkDate, 'LRB', 1, 'R', 1);
-        $pdf->setFont('', '');
-        // Reset font
-        $pdf->SetFont('', '', $fontSize);
-        $pdf->SetTextColor(0x28, 0x28, 0x28);
-    }
-
-    protected function drawMessages(\TCPDF $pdf, $order_id) {}
-
-    protected function drawMessages2(\TCPDF $pdf, $order_id)
-    {
-        $order = new \Order($order_id);
-        if (!\Validate::isLoadedObject($order)) {
-            return;
-        }
-
-        $db = \Db::getInstance();
-        $sql = new \DbQuery();
-        $sql
-            ->select('id_employee, gravity, content, printable, chat, date_add')
-            ->from('mpnote')
-            ->where('id_order=' . (int) $order_id)
-            ->where('printable = 1')
-            ->orderBy('date_add DESC');
-
-        $messages = $db->executeS($sql);
-
-        if (!$messages) {
-            return '';
-        }
-
-        $pdf->addPage();
-        $this->writeHeaderOrderNum($pdf, $this->id_order);
-
-        $w = $this->getWidths();
-        $colors = $this->getColors();
-        $h = $this->getHeight();
-        $fontSize = $this->getFontSize();
-        // $pdf->AddPage();
-        // $pdf->SetY(10);
-        $pdf->SetX(10);
-        $pdf->setFontSize(18);
-        $pdf->Cell(190, 8, 'MESSAGGI', 0, 1, 'C');
-        $pdf->SetX(10);
-        $pdf->setFontSize($fontSize);
-
-        // Intestazione tabella
-        $pdf->SetFillColor(230, 230, 230);
-        $pdf->SetFont('', 'B');
-        $pdf->Cell(50, 8, 'IMPIEGATO', 1, 0, 'C', 1);
-        $pdf->Cell(35, 8, 'DATA', 1, 0, 'C', 1);
-        $pdf->Cell(85, 8, 'MESSAGGIO', 1, 0, 'C', 1);
-        $pdf->Cell(20, 8, 'CHAT', 1, 1, 'C', 1);
-        $pdf->SetFont('', '');
-        $pdf->SetFillColor(255, 255, 230);
-
-        $employees = [];
-        foreach ($messages as $message) {
-            if (!isset($message['printable']) || !$message['printable']) {
-                continue;
-            }
-            $id_employee = $message['id_employee'];
-            if (!isset($employees[$id_employee])) {
-                $employee = new \Employee($id_employee);
-                $employees[$id_employee] = $employee->firstname . ' ' . $employee->lastname;
-            }
-            $impiegato = $employees[$id_employee];
-            $data = isset($message['date_add']) ? date('d/m/Y H:i', strtotime($message['date_add'])) : '';
-            $messaggio = $message['content'];
-
-            // Calcola l'altezza necessaria per il messaggio
-            $startX = $pdf->GetX();
-            $startY = $pdf->GetY();
-            $cellW = [50, 35, 85, 20];
-            $cellH = 8;
-            $paddingBottom = 2;  // mm
-            // Simula la MultiCell per calcolare l'altezza
-            $messaggioHeight = $pdf->getStringHeight($cellW[2], $messaggio);
-            $rowHeight = max($cellH, $messaggioHeight) + $paddingBottom;
-
-            // Colonna IMPIEGATO
-            $pdf->MultiCell($cellW[0], $rowHeight, $impiegato, 1, 'L', 0, 0);
-            // Colonna DATA
-            $pdf->MultiCell($cellW[1], $rowHeight, $data, 1, 'C', 0, 0);
-            // Colonna MESSAGGIO
-            $pdf->MultiCell($cellW[2], $rowHeight, $messaggio, 1, 'L', 0, 0);
-            // Colonna CHAT
-            $x = $pdf->GetX();
-            $y = $pdf->GetY();
-            $pdf->MultiCell($cellW[3], $rowHeight, '', 1, 'C', 0, 0);
-            if (isset($message['chat']) && 1 == $message['chat']) {
-                // Centra l'immagine nella cella
-                $imgX = $x + ($cellW[3] - 5) / 2;
-                $imgY = $startY + ($rowHeight - 5) / 2;
-                $pdf->Image(_PS_MODULE_DIR_ . 'mpdocumentprint/views/img/chat.png', $imgX, $imgY, 5, 5);
-            }
-            $pdf->Ln();
-        }
-    }
-
-    protected function drawProductCustomization(\TCPDF &$pdf, $product)
-    {
-        $w = $this->getWidths();
-        $colors = $this->getColors();
-        $h = $this->getHeight();
-        $fontSize = $this->getFontSize();
-        $lineHeight = $this->getLineHeight();
-
-        // Controllo che sia un allegato con immagine
-        $imgPath = '';
-
-        if (!isset($product['customizations']) || empty($product['customizations'])) {
-            return;
-        }
-
-        foreach ($product['customizations'] as $customizations) {
-            $startX = $pdf->GetX();
-            $startY = $pdf->GetY();
-
-            // Tipo di personalizzazione
-            $pdf->SetX($startX);
-            $pdf->SetY($pdf->GetY());
-            $c = $colors['blue'];
-            $pdf->setTextColor($c[0], $c[1], $c[2]);
-            $pdf->Cell($w['label'], $h, 'Tipo di Personalizzazione', '', 0, 'L', 0, '', 1);
-            $pdf->setFont('', 'B');
-            $pdf->MultiCell($w['value'], $h, $product['combination'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
-            $pdf->setFont('', '');
-
-            // Quantità
-            $pdf->SetX($startX);
-            $pdf->SetY($pdf->GetY());
-            $c = $colors['blue'];
-            $pdf->setTextColor($c[0], $c[1], $c[2]);
-            $pdf->Cell($w['label'], $h, 'Quantità', '', 0, 'L', 0, '', 1);
-            $pdf->setFont('', 'B');
-            $pdf->MultiCell($w['value'], $h, $product['product_quantity'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
-            $pdf->setFont('', '');
-
-            foreach ($customizations['data'] as $customization) {
-                $pdf->SetFont('', '', $fontSize - 1);
-                $c = $colors['dark-gray'];
-                $pdf->SetTextColor($c[0], $c[1], $c[2]);
-
-                $pdf->SetX($startX + 35);
-                $pdf->SetY($pdf->GetY());
-                $pdf->Cell($w['label'], $h, $customization['label'], '', 0, 'L', 0, '', 1);
-                $pdf->setFont('', 'B');
-                $pdf->MultiCell($w['value'], $h, $customization['value'], 0, 'L', false, 1, $pdf->GetX(), $pdf->GetY() + 1, true, 0, false, true, 0, 'T', false);
-                $pdf->setFont('', '');
-            }
-
-            foreach ($customizations['data'] as $customization) {
-                if ($customization['hasFile']) {
-                    $imgPath = _PS_UPLOAD_DIR_ . $customization['value'];
-                    if (!empty($imgPath)) {
-                        if (@file_exists($imgPath)) {
-                            $pdf->Image($imgPath, $startX + 160, $startY + 2, 30, 30, '', '', '', true, 300, '', false, false, 1, 'CM', false, true);
-                        }
-                    }
-                }
-            }
-
-            $c = $colors['dark-gray'];
-            $pdf->setTextColor($c[0], $c[1], $c[2]);
-        }
-
-        // linea di divisione
-        $pdf->Line($startX, $pdf->GetY() + 2, $startX + 180, $pdf->GetY() + 2);
-        $pdf->setY($pdf->getY() + 2);
-    }
-
-    protected function getWidths()
-    {
-        return [
-            'thumb' => 20,
-            'reference' => 50,
-            'name' => 60,
-            'qty' => 30,
-            'price' => 30,
-            'location' => 110,
-            'stock_Service' => 60,
-            'label' => 60,
-            'value' => 100,
-        ];
-    }
-
-    protected function getColors()
-    {
-        return [
-            'red' => [0xC8, 0x1E, 0x1E],
-            'light-red' => [0xB0, 0x64, 0x64],
-            'green' => [0x64, 0xB0, 0x64],
-            'blue' => [0x1E, 0x1E, 0xC8],
-            'yellow' => [0xFF, 0xFF, 0x0],
-            'dark-yellow' => [0xC0, 0xC0, 0x0],
-            'orange' => [0xFF, 0xA5, 0x0],
-            'purple' => [0x80, 0x0, 0x80],
-            'pink' => [0xFF, 0xC0, 0xCB],
-            'brown' => [0xA5, 0x2A, 0x2A],
-            'gray' => [0x80, 0x80, 0x80],
-            'dark-gray' => [0x40, 0x40, 0x40],
-        ];
-    }
-
-    protected function getHeight()
-    {
-        return 7;
-    }
-
-    protected function getFontSize()
-    {
-        return 9;
-    }
-
-    protected function getLineHeight()
-    {
-        return 4.5;
     }
 
     protected function truncateString($string, $length, $html = false)

@@ -112,6 +112,9 @@ class OrderRow
         $pdf->setFont('', '');
         $pdf->SetTextColor(0x80, 0x30, 0xB4);
 
+        $pdf->setFontSize($fontSize + 4);
+        $pdf->setFont('', 'B');
+
         // Visualizzo la quantità in magazzino in diversi colori
         $stock = (int) ($product['product_quantity_in_stock'] ?? 0);
         if ($stock <= 0) {
@@ -139,6 +142,7 @@ class OrderRow
         $pdf->setFillColor(0xFF, 0xFF, 0xFF);
 
         // Visualizzo lo sconto
+        $pdf->setFont('', '');
         $pdf->setFontSize($fontSize);
         $c = $colors['light-red'];
         $pdf->SetTextColor($c[0], $c[1], $c[2]);
